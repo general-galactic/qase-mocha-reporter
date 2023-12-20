@@ -2,7 +2,7 @@
 	"extends": "@tsconfig/node20/tsconfig.json",
 	"compilerOptions": {
     "module": "CommonJS",
-    "target": "es2020",
+    "target": "ES2022",
 		"outDir": "dist",
 		"sourceMap": true,
     "allowSyntheticDefaultImports": true,

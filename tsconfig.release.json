@@ -2,6 +2,6 @@
 	"extends": "./tsconfig.json",
 	"exclude": [
     "tests",
-    "example"
+    "example/**"
   ]
 }
