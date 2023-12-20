@@ -1,0 +1,10 @@
+{
+	"extends": "./tsconfig.release.json",
+  "compilerOptions": {
+    "outDir": "dist/cjs",
+    "module": "CommonJS"
+  },
+	"exclude": [
+    "src/index.esm.ts"
+  ]
+}

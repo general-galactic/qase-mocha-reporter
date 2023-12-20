@@ -1,0 +1,17 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "QASE_API_TOKEN=XXX QASE_PROJECT_CODE=YYY QASE_TEST_RUN_TITLE=ZZZ mocha --require=tsx --reporter=../src/index.cjs.ts --exit 'tests/**/*.spec.ts'"
+  },
+  "author": "General Galactic",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/chai": "^4.3.11",
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "tsx": "^4.7.0"
+  }
+}

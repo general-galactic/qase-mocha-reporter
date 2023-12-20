@@ -1,0 +1,10 @@
+{
+	"extends": "./tsconfig.release.json",
+  "compilerOptions": {
+    "outDir": "dist/esm",
+    "module": "ES2022"
+  },
+	"exclude": [
+    "src/index.cjs.ts"
+  ]
+}

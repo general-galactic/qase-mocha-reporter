@@ -4,11 +4,11 @@
   "description": "A mocha reporter that will uploaded automated test results into Qase Test Runs",
   "type": "module",
   "exports": {
-    "require": "./dist/cjs/index.js",
-    "import": "./dist/esm/index.js"
+    "require": "./dist/cjs/index.cjs.js",
+    "import": "./dist/esm/index.esm.js"
   },
-  "main": "./dist/cjs/index.js",
-  "types": "./dist/cjs/index.d.ts",
+  "main": "./dist/cjs/index.cjs.js",
+  "types": "./dist/cjs/index.cjs.d.ts",
   "files": [
     "./dist"
   ],
@@ -16,9 +16,9 @@
     "clean": "rm -rf dist",
     "clean-build": "npm run clean && npm run build",
     "build": "npm run build:cjs && npm run build:esm",
-    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
-    "build:esm": "tsc --module es2022 --outDir dist/esm",
-    "release": "npm run clean-build && release-it"
+    "build:cjs": "tsc --project tsconfig.release.cjs.json",
+    "build:esm": "tsc --project tsconfig.release.esm.json",
+    "release": "npm run release-build && release-it"
   },
   "keywords": [
     "mocha",

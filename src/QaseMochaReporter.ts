@@ -1,6 +1,6 @@
 'use strict'
 
-import Mocha, { Runnable, Runner, Suite } from 'mocha'
+import Mocha, { Runnable, Runner, Suite, reporters } from 'mocha'
 import { QaseApi } from 'qaseio'
 import deasyncPromise from 'deasync-promise'
 import { Project, ResultCreate, ResultCreateStatusEnum, RunCreate } from 'qaseio/dist/src/model'
@@ -30,7 +30,7 @@ function _qaseTestRunTagsFromEnvVar(name: string): string[] | undefined {
     return tagsString.split(',').map(t => t.trim() )
 }
 
-export class QaseMochaReporter {
+export class QaseMochaReporter extends reporters.Base {
 
     private qase = new QaseApi(_requireEnvVar('QASE_API_TOKEN') )
     private qaseProjectCode = _requireEnvVar('QASE_PROJECT_CODE') 
@@ -42,15 +42,16 @@ export class QaseMochaReporter {
     private results: { suiteName?: string, testCaseTitle: string, testCaseResult: TestCaseResult, testCaseDuration?: number }[] = []
     private _indents = 0
 
-    private runner: Runner
+    runner: Runner
 
     constructor(runner: Runner) {
+        super(runner)
         this.runner = runner
-        runner.once(EVENT_RUN_BEGIN, this._mochaBegin)
-        runner.on(EVENT_SUITE_BEGIN, this._mochaSuiteBegin)
-        runner.on(EVENT_SUITE_END, this._mochaSuiteEnd)
-        runner.on(EVENT_TEST_END, this._mochaTestEnd)
-        runner.once(EVENT_RUN_END, this._mochaRunEnd)
+        runner.once(EVENT_RUN_BEGIN, this._mochaBegin.bind(this))
+        runner.on(EVENT_SUITE_BEGIN, this._mochaSuiteBegin.bind(this))
+        runner.on(EVENT_SUITE_END, this._mochaSuiteEnd.bind(this))
+        runner.on(EVENT_TEST_END, this._mochaTestEnd.bind(this))
+        runner.once(EVENT_RUN_END, this._mochaRunEnd.bind(this))
     }
 
     private _mochaBegin(){
@@ -127,7 +128,10 @@ export class QaseMochaReporter {
 
     private async ensureQaseProjectExists(){
         const project = await this.getProject(this.qaseProjectCode)
-        if (project === undefined) throw new Error(`You must first create a Qase project in their UI with a project code of: '${this.qaseProjectCode}'`)
+        if (project === undefined) {
+            console.error(`You must first create a Qase project in their UI with a project code of: '${this.qaseProjectCode}'`)
+            throw new Error(`You must first create a Qase project in their UI with a project code of: '${this.qaseProjectCode}'`)
+        }
     }
 
     private async getProject(name: string): Promise<Project | undefined> {
