@@ -1,1 +1,3 @@
-export * from './QaseMochaReporter'
+import { QaseMochaReporter }  from './QaseMochaReporter'
+
+export default QaseMochaReporter
