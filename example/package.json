@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "QASE_API_TOKEN=XXX QASE_PROJECT_CODE=YYY QASE_TEST_RUN_TITLE=ZZZ mocha --require=tsx --reporter=../src/index.cjs.ts --exit 'tests/**/*.spec.ts'"
+    "test": "QASE_API_TOKEN=XXX QASE_PROJECT_CODE=YYY QASE_TEST_RUN_TITLE=ZZZ mocha --require=tsx --reporter=../src/index.ts --exit 'tests/**/*.spec.ts'"
   },
   "author": "General Galactic",
   "license": "Apache-2.0",
