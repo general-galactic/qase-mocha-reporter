@@ -245,14 +245,16 @@ export class QaseMochaReporter extends reporters.Base {
         })
 
         try {
-            debug('Uploading qase test results: ', qaseResults)
-
+            debug(`Uploading qase ${qaseResults.length} test results: `)
             const result = await this.qase.results.createResultBulk(this.qaseProjectCode, this.qaseTestRunId, {
                 results: qaseResults
             })
-            debug('Uploaded qase test results: ', result.data.status)
+            debug(`Uploaded ${qaseResults.length} qase test results: `, result.data.status)
         } catch(error) {
-            console.error('Error uploading qase test results: ', error)
+            const response = this.extractErrorResponse(error)
+            const message = `Error uploading qase test results: status=${response?.status}; data=${JSON.stringify(response?.data)}`
+            console.error(message)
+            throw new Error(message)
         }
     }
 
