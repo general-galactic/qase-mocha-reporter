@@ -246,6 +246,7 @@ export class QaseMochaReporter extends reporters.Base {
 
         try {
             debug(`Uploading qase ${qaseResults.length} test results: `)
+            debug('CASE RESULT JSON', JSON.stringify(qaseResults, null, '\t'))
             const result = await this.qase.results.createResultBulk(this.qaseProjectCode, this.qaseTestRunId, {
                 results: qaseResults
             })
