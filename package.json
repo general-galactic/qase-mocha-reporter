@@ -18,7 +18,7 @@
     "build": "npm run build:cjs && npm run build:esm",
     "build:cjs": "tsc --project tsconfig.release.cjs.json",
     "build:esm": "tsc --project tsconfig.release.esm.json",
-    "release": "npm run release-build && release-it"
+    "release": "npm run clean-build && release-it"
   },
   "keywords": [
     "mocha",
