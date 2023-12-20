@@ -3,7 +3,7 @@
 import Mocha, { Runnable, Runner, Suite, reporters } from 'mocha'
 import { QaseApi } from 'qaseio'
 import deasyncPromise from 'deasync-promise'
-import { Project, ResultCreate, ResultCreateStatusEnum, RunCreate } from 'qaseio/dist/src/model'
+import { Project, ResultCreate, ResultCreateStatusEnum, Run, RunCreate } from 'qaseio/dist/src/model'
 import createDebug from 'debug'
 
 const debug = createDebug('qase-mocha-reporter')
@@ -17,6 +17,12 @@ const {
 } = Mocha.Runner.constants
 
 type TestCaseResult = 'passed' | 'failed' | 'skipped'
+
+type QaseApiResponse = {
+    status: number
+    statusText: string
+    data?: Record<string, unknown>
+}
 
 function _requireEnvVar(name: string): string {
     const value = process.env[name]
@@ -88,7 +94,7 @@ export class QaseMochaReporter extends reporters.Base {
             throw error
         } finally {
             // Just make sure this always runs
-            deasyncPromise(this.endTestRun())
+            deasyncPromise(this.endCurrentTestRun())
         }
 
         if (this.runner.stats !== undefined) {
@@ -107,23 +113,102 @@ export class QaseMochaReporter extends reporters.Base {
         throw new Error('Unknown test case result')
     }
 
-    private async createQaseTestRun(){
-        debug('Creating qase test run')
-        
-        this.qaseTestRunId = await this.createTestRun({
+    private async createQaseTestRun(autoCompleteActiveTestRuns = true){
+        const runData: RunCreate = {
             title: this.qaseTestRunTitle,
             is_autotest: true,
             tags: this.qaseTestRunTags
-        })
-        if (this.qaseProjectCode == undefined) throw new Error(`Couldn't get qase test run id`)
+        }
         
-        debug('Created qase test run with id: ', this.qaseTestRunId)
+        const result = await this.createTestRun(runData)
+        if ('testRunNumber' in result) {
+            this.qaseTestRunId = result.testRunNumber
+        } else if('error' in result && result.error === 'active-run-limit-reached' && autoCompleteActiveTestRuns) {
+            await this.completeActiveRuns()
+
+            // retry
+            const result = await this.createTestRun(runData)
+            if ('testRunNumber' in result) {
+                this.qaseTestRunId = result.testRunNumber
+            }
+        }
+
+        if (this.qaseTestRunId === undefined) {
+            const message = `Couldn't create a qase test run in the '${this.qaseProjectCode}' project.`
+            console.error(message)
+            throw new Error(message)
+        }
+
+        console.log('Created qase test run with id: ', this.qaseTestRunId)
     }
 
-    private async createTestRun(runData: RunCreate): Promise<number | undefined> {
-        if (this.qaseProjectCode === undefined) throw new Error(`No qase project`)
-        const result = await this.qase.runs.createRun(this.qaseProjectCode, runData)
-        return result.data.result?.id
+    private async completeActiveRuns(){
+        const activeRuns = await this.getRecentActiveTestRuns()
+        if (activeRuns.length === 0) return
+
+        for (const run of activeRuns) {
+            await this.completeTestRun(run)
+        }
+    }
+
+    private async getRecentActiveTestRuns(limit = 10){
+        try {
+            const result = await this.qase.runs.getRuns(this.qaseProjectCode, undefined, limit, 0)
+            const runs = result.data.result
+            if (runs === undefined || runs.total === 0 || runs.entities === undefined) return []
+            const activeRuns = runs.entities.filter(run => {
+                return run.status_text === 'active'
+            })
+            debug('Fetched active qase runs: ', activeRuns)
+            return activeRuns
+        } catch(error) {
+            const message = `Couldn't get active test runs for the '${this.qaseProjectCode}' project.`
+            console.error(message, error)
+            throw new Error(message)
+        }
+    }
+
+    private async createTestRun(runData: RunCreate): Promise<{ testRunNumber: number } | { error: 'active-run-limit-reached' }> {
+        try {
+            const result = await this.qase.runs.createRun(this.qaseProjectCode, runData)
+            if (result.data.result?.id === undefined) throw new Error(`Couldn't create a qase test run`)
+
+            return {
+                testRunNumber: result.data.result.id
+            }
+        } catch(error) {
+            if (this.isLimitOfActiveRunsError(error)) {
+                return {
+                    error: 'active-run-limit-reached'
+                }
+            }
+            throw error
+        }
+    }
+
+    private isLimitOfActiveRunsError(error: unknown){
+        const response = this.extractErrorResponse(error)
+        if (response === undefined) return false
+        if (response.status !== 403) return false
+
+        const errorMessage = response.data?.errorMessage as string | undefined
+        if (errorMessage === undefined) return false
+
+        return errorMessage.toLowerCase().includes('limit of active runs')
+    }
+
+    private extractErrorResponse(error: unknown): QaseApiResponse | undefined {
+        if (error instanceof Error) {
+            if ('response' in error) {
+                const response = error.response as QaseApiResponse
+                return {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: response.data
+                }
+            }
+        }
+        throw error
     }
 
     private async ensureQaseProjectExists(){
@@ -139,11 +224,8 @@ export class QaseMochaReporter extends reporters.Base {
             const result = await this.qase.projects.getProject(name)
             return result.data.result
         } catch(error) {
-            if (error instanceof Error) {
-                if ('response' in error) {
-                    if ((error.response as any).status === 404) return undefined
-                }
-            }
+            const response = this.extractErrorResponse(error)
+            if (response?.status === 404) return undefined // project does not exist
             throw error
         }
     }
@@ -174,10 +256,14 @@ export class QaseMochaReporter extends reporters.Base {
         }
     }
 
-    private async endTestRun(){
-        if (this.qaseProjectCode === undefined) throw new Error(`No qase project`)
+    private async endCurrentTestRun(){
         if (this.qaseTestRunId === undefined) throw new Error(`No qase test run id`)
         await this.qase.runs.completeRun(this.qaseProjectCode, this.qaseTestRunId)
+    }
+
+    private async completeTestRun(run: Run){
+        if (run.id === undefined) throw new Error(`No qase test run id`)
+        await this.qase.runs.completeRun(this.qaseProjectCode, run.id)
     }
 
     private indent() {
