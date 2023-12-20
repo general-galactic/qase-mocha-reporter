@@ -1,0 +1,17 @@
+{
+	"extends": "@tsconfig/node20/tsconfig.json",
+	"compilerOptions": {
+    "module": "ESNext",
+    "target": "es2020",
+		"outDir": "dist",
+		"sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "strict": true,
+    "lib": [
+      "DOM",
+      "ES2020"
+    ],
+    "moduleResolution": "node"
+	}
+}

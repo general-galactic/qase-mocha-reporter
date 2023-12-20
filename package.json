@@ -1,0 +1,50 @@
+{
+  "name": "@general-galactic/qase-mocha-reporter",
+  "version": "1.0.0",
+  "description": "A mocha reporter that will uploaded automated test results into Qase Test Runs",
+  "type": "module",
+  "exports": {
+    "require": "./dist/cjs/index.js",
+    "import": "./dist/esm/index.js"
+  },
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "clean-build": "npm run clean && npm run build",
+    "build": "npm run build:cjs && npm run build:esm",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
+    "build:esm": "tsc --module es2022 --outDir dist/esm",
+    "release": "npm run clean-build && release-it"
+  },
+  "keywords": [
+    "mocha",
+    "junit",
+    "reporter",
+    "qase"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/general-galactic/qase-mocha-reporter"
+  },
+  "author": "General Galactic",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "deasync-promise": "^1.0.1",
+    "debug": "^4.3.4",
+    "qaseio": "^2.0.2",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.2",
+    "@types/deasync-promise": "^1.0.2",
+    "@types/debug": "^4.1.12",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.10.5",
+    "mocha": "^10.2.0",
+    "release-it": "^17.0.1"
+  },
+  "peerDependencies": {
+    "mocha": ">= 10.0.0"
+  }
+}
