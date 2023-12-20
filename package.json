@@ -9,6 +9,9 @@
   },
   "main": "./dist/cjs/index.js",
   "types": "./dist/cjs/index.d.ts",
+  "files": [
+    "./dist"
+  ],
   "scripts": {
     "clean": "rm -rf dist",
     "clean-build": "npm run clean && npm run build",
