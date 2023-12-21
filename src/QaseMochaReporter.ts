@@ -91,11 +91,10 @@ export class QaseMochaReporter extends reporters.Base {
         try {
             deasyncPromise(this.uploadResults())
         } catch(error) {
-            throw error
-        } finally {
-            // Just make sure this always runs
-            deasyncPromise(this.endCurrentTestRun())
+            console.error(`Error uploading results`, error)
         }
+
+        deasyncPromise(this.endCurrentTestRun())
 
         if (this.runner.stats !== undefined) {
             console.log(`end: ${this.runner.stats.passes}/${this.runner.stats.passes + this.runner.stats.failures} ok`)
@@ -246,9 +245,11 @@ export class QaseMochaReporter extends reporters.Base {
 
         try {
             debug(`Uploading qase ${qaseResults.length} test results for run id=${this.qaseTestRunId}: `)
-            debug('CASE RESULT JSON', JSON.stringify(qaseResults, null, '\t'))
+            // debug('CASE RESULT JSON', JSON.stringify(qaseResults, null, '\t'))
             const result = await this.qase.results.createResultBulk(this.qaseProjectCode, this.qaseTestRunId, {
                 results: qaseResults
+            }, {
+                timeout: 15000
             })
             debug(`Uploaded ${qaseResults.length} qase test results: `, result.data.status)
         } catch(error) {
@@ -261,7 +262,9 @@ export class QaseMochaReporter extends reporters.Base {
 
     private async endCurrentTestRun(){
         if (this.qaseTestRunId === undefined) throw new Error(`No qase test run id`)
+        debug(`Completing qase test run id=${this.qaseTestRunId}`)
         await this.qase.runs.completeRun(this.qaseProjectCode, this.qaseTestRunId)
+        debug(`Completed qase test run id=${this.qaseTestRunId}`)
     }
 
     private async completeTestRun(run: Run){
