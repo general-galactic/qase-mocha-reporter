@@ -1,5 +1,5 @@
 {
-  "name": "@general-galactic/qase-mocha-reporter",
+  "name": "qase-mocha-reporter",
   "version": "1.0.15",
   "description": "A mocha reporter that will uploaded automated test results into Qase Test Runs",
   "type": "module",
