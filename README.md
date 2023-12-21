@@ -4,8 +4,8 @@ A mocha reporter that will uploaded automated test results into Qase Test Runs f
 
 ## Usage
 
-1. Install the reporter: `npm i -D @general-galactic/qase-mocha-reporter`
-2. Configure mocha to use the reporter: `--reporter @general-galactic/qase-mocha-reporter`
+1. Install the reporter: `npm i -D qase-mocha-reporter`
+2. Configure mocha to use the reporter: `--reporter qase-mocha-reporter`
 3. Set up the required environment parameters:
     * `QASE_API_TOKEN` - An API token obtained from your Qase account.
     * `QASE_PROJECT_CODE` - The short project code found in your Qase project settings.
