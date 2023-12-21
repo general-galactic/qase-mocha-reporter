@@ -1,6 +1,6 @@
 {
   "name": "qase-mocha-reporter",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "A mocha reporter that will uploaded automated test results into Qase Test Runs",
   "type": "module",
   "main": "./dist/index.js",
