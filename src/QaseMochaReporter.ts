@@ -102,13 +102,14 @@ export class QaseMochaReporter extends reporters.Base {
     }
 
     private resultForTestCase(test: Runnable): 'passed' | 'failed' | 'skipped' {
+        console.log('GETTING RESULT', test.isFailed(), test.isPassed(), test.isPending(), test.pending)
+        if (test.isPending()) return 'skipped'
+
         if (test.isPassed()) {
             return 'passed'
         } else if(test.isFailed()) {
             return 'failed'
-        } else if(test.isPending()) {
-            return 'skipped'
-        }
+        } 
         throw new Error('Unknown test case result')
     }
 
@@ -229,12 +230,19 @@ export class QaseMochaReporter extends reporters.Base {
         }
     }
 
+    private qaseStatusForTestCaseResult(result: TestCaseResult): ResultCreateStatusEnum {
+        if (result === 'skipped') return ResultCreateStatusEnum.SKIPPED
+        if (result === 'passed') return ResultCreateStatusEnum.PASSED
+        if (result === 'failed') return ResultCreateStatusEnum.FAILED
+        return ResultCreateStatusEnum.INVALID
+    }
+
     private async uploadResults(){
         if (this.qaseTestRunId === undefined) throw new Error(`No qase test run id`)
 
         const qaseResults: ResultCreate[] = this.results.map(r => {
             return {
-                status: r.testCaseResult === 'passed' ? ResultCreateStatusEnum.PASSED : ResultCreateStatusEnum.FAILED,
+                status: this.qaseStatusForTestCaseResult(r.testCaseResult),
                 case: {
                     suite_title: r.suiteName,
                     title: r.testCaseTitle,
