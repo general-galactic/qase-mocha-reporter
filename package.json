@@ -22,7 +22,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/general-galactic/qase-mocha-reporter"
+    "url": "git+https://github.com/general-galactic/qase-mocha-reporter.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
