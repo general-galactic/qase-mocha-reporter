@@ -1,9 +1,9 @@
 'use strict'
 
-import Mocha, { Runnable, Runner, Suite, reporters } from 'mocha'
+import Mocha, { Runnable, Runner, Suite, Test, reporters } from 'mocha'
 import { QaseApi } from 'qaseio'
 import deasyncPromise from 'deasync-promise'
-import { Project, ResultCreate, ResultCreateStatusEnum, Run, RunCreate } from 'qaseio/dist/src/model'
+import { Project, ResultCreate, ResultCreateCase, ResultCreateStatusEnum, Run, RunCreate } from 'qaseio/dist/src/model'
 import createDebug from 'debug'
 
 const debug = createDebug('qase-mocha-reporter')
@@ -45,7 +45,7 @@ export class QaseMochaReporter extends reporters.Base {
 
     private qaseTestRunId: number | undefined
     private currentSuiteName: string | undefined
-    private results: { suiteName?: string, testCaseTitle: string, testCaseResult: TestCaseResult, testCaseDuration?: number }[] = []
+    private results: { suiteName?: string, testCaseTitle: string, testCaseResult: TestCaseResult, testCaseDuration?: number, stacktrace?: string }[] = []
     private _indents = 0
 
     runner: Runner
@@ -75,17 +75,53 @@ export class QaseMochaReporter extends reporters.Base {
         this.currentSuiteName = undefined
     }
 
-    private _mochaTestEnd(test: Runnable){
+    private _mochaTestEnd(test: Test){
         const testCaseResult = this.resultForTestCase(test)
         console.log(`${this.indent()}${testCaseResult.toUpperCase()} - ${test.fullTitle()}`)
 
+        let error: Record<string, unknown> | undefined = undefined
+        if (test.err !== undefined) {
+            error = this._cleanCycles(this._errorJSON(test.err))
+        }
+        
         this.results.push({
             suiteName: this.currentSuiteName,
             testCaseTitle: test.fullTitle(),
             testCaseResult,
-            testCaseDuration: test.duration
+            testCaseDuration: test.duration,
+            stacktrace: test.err !== undefined ? test.err.stack : undefined
         })
     }
+
+    private _errorJSON(err: Error): Record<string, unknown> {
+        const res: Record<string, unknown> = { }
+        Object.getOwnPropertyNames(err).forEach(function (key) {
+          res[key] = (err as any)[key]
+        }, err)
+        return res
+    }
+
+    /**
+     * Taken from the mocha json reporter
+     * @param obj 
+     * @returns 
+     */
+    private _cleanCycles(obj: Record<string, unknown>): Record<string, unknown> {
+        const cache: unknown[] = []
+
+        return JSON.parse(
+          JSON.stringify(obj, function (_key, value) {
+            if (typeof value === 'object' && value !== null) {
+              if (cache.indexOf(value) !== -1) {
+                // Instead of going in a circle, we'll print [object Object]
+                return '' + value;
+              }
+              cache.push(value);
+            }
+            return value;
+          })
+        )
+      }
 
     private _mochaRunEnd(){
         try {
@@ -241,13 +277,16 @@ export class QaseMochaReporter extends reporters.Base {
         if (this.qaseTestRunId === undefined) throw new Error(`No qase test run id`)
 
         const qaseResults: ResultCreate[] = this.results.map(r => {
+            const qaseCase: ResultCreateCase = {
+                suite_title: r.suiteName,
+                title: r.testCaseTitle
+            }
+
             return {
                 status: this.qaseStatusForTestCaseResult(r.testCaseResult),
-                case: {
-                    suite_title: r.suiteName,
-                    title: r.testCaseTitle,
-                    time_ms: r.testCaseDuration
-                }
+                case: qaseCase,
+                time_ms: r.testCaseDuration,
+                stacktrace: r.stacktrace
             } as ResultCreate
         })
 
