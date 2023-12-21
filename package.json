@@ -24,6 +24,9 @@
     "type": "git",
     "url": "https://github.com/general-galactic/qase-mocha-reporter"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "author": "General Galactic",
   "license": "Apache-2.0",
   "dependencies": {
